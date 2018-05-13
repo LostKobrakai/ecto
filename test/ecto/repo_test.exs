@@ -15,6 +15,10 @@ defmodule Ecto.RepoTest do
       field :array, {:array, :string}
       field :map, {:map, :string}
       belongs_to :another, MySchema.Another
+
+      embeds_one :embed, Embed do
+        field :x, :string
+      end
     end
   end
 
@@ -377,6 +381,30 @@ defmodule Ecto.RepoTest do
     assert Process.get(:ecto_counter) == 2
   end
 
+  test "prepare_changes functions of embeds are run" do
+    embed_changeset =
+      %MySchema.Embed{id: 1}
+      |> Ecto.Changeset.cast(%{x: "one"}, [:x])
+      |> Ecto.Changeset.prepare_changes(fn %{repo: repo} = changeset ->
+        Process.put(:ecto_repo, repo)
+        Process.put(:ecto_counter, 1)
+        changeset
+      end)
+      |> Ecto.Changeset.prepare_changes(fn changeset ->
+        Process.put(:ecto_counter, 2)
+        changeset
+      end)
+
+    changeset =
+      %MySchema{id: 1}
+      |> Ecto.Changeset.cast(%{x: "one"}, [:x])
+      |> Ecto.Changeset.put_embed(:embed, embed_changeset)
+
+    TestRepo.insert!(changeset)
+    assert_received {:transaction, _}
+    assert Process.get(:ecto_repo) == TestRepo
+    assert Process.get(:ecto_counter) == 2
+  end
   describe "changeset constraints" do
     test "are mapped to repo constraint violations" do
       my_schema = %MySchema{id: 1}
