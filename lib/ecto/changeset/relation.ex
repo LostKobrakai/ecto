@@ -539,8 +539,9 @@ defmodule Ecto.Changeset.Relation do
             # control over the current value.
             value = not_loaded_to_empty(Map.get(struct, field))
             empty = empty(embed_or_assoc)
+            write_empty_state = Map.get(embed_or_assoc, :write_empty_state, false)
             case change(embed_or_assoc, value, empty) do
-              {:ok, change, _} when change != empty ->
+              {:ok, change, _} when change != empty or write_empty_state ->
                 {Map.put(changes, field, change), errors}
               {:error, error} ->
                 {changes, [{field, error}]}

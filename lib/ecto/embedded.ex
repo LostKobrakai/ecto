@@ -8,6 +8,7 @@ defmodule Ecto.Embedded do
     * `field` - The name of the association field on the schema
     * `owner` - The schema where the association was defined
     * `related` - The schema that is embedded
+    * `write_empty_state` - Boolean to force writing the empty state on insert
     * `on_cast` - Function name to call by default when casting embeds
     * `on_replace` - The action taken on associations when schema is replaced
 
@@ -28,6 +29,7 @@ defmodule Ecto.Embedded do
     :owner,
     :related,
     :on_cast,
+    write_empty_value: false,
     on_replace: :raise,
     unique: true,
     ordered: true
@@ -52,6 +54,11 @@ defmodule Ecto.Embedded do
       raise ArgumentError, "invalid `:on_replace` option for #{inspect Keyword.fetch!(opts, :field)}. " <>
         "The only valid options are: " <>
         Enum.map_join(on_replace_opts, ", ", &"`#{inspect &1}`")
+    end
+
+    if Keyword.has_key?(opts, :write_empty_value) and not is_boolean(opts[:write_empty_value]) do
+      raise ArgumentError, "invalid `:write_empty_value` option for #{inspect Keyword.fetch!(opts, :field)}. " <>
+        "Must be a boolean."
     end
 
     struct(%Embedded{}, opts)
